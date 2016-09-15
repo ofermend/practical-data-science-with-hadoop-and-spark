@@ -1,14 +1,18 @@
-# ingest sentiment140 dataset
-curl http://cs.stanford.edu/people/alecmgo/trainingandtestdata.zip > sentiment.zip
-unzip sentiment.zip
-hadoop fs -rm sentiment
-hadoop fs -mkdir sentiment
-hadoop fs -put testdata.manual.2009.06.14.csv training.1600000.processed.noemoticon.csv sentiment/
+# ingest Ohsumed text collection
+wget http://disi.unitn.it/moschitti/corpora/ohsumed-all-docs.tar.gz
+tar -zxvf ohsumed-all-docs.tar.gz
+hadoop fs -rm -r ohsumed
+hadoop fs -mkdir ohsumed
+hadoop fs -put ohsumed-all/* ohsumed/
+rm -rf ohsumed-all
+rm ohsumed-all-docs.tar.gz
 
-# ingest positive/negative word list
-hadoop fs -rm wordlist
-hadoop fs -mkdir wordlist
-hadoop fs -put AFINN-111.txt wordlist/
+# copy stop-words to HDFS
+hadoop fs -put stop-words.txt .
 
-# run hive query
-hive -f build-tables.hql
+# get openNLP jar
+wget http://apache.mirrors.hoobly.com/opennlp/opennlp-1.6.0/apache-opennlp-1.6.0-bin.zip
+unzip apache-opennlp-1.6.0-bin.zip
+cp apache-opennlp-1.6.0/lib/opennlp-tools-1.6.0.jar .
+rm -rf apache-opennl-1.6.0/
+rm apache-opennlp-1.6.0-bin.zip
