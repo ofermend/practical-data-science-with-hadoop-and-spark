@@ -1,0 +1,13 @@
+30,Albert,Sales,NJ,PC
+31,Walter,Manager,NJ,PC
+32,Manfred,Sales,PA,MAC
+33,Roberta,Manager,PA,MAC
+34,Larry,Engineer,PA,PC
+35,Andy,Sales,PA,PC
+36,Remley,Manager,NJ,PC
+37,Reba,Engineer,NJ,MAC
+38,Wendy,Admin,DE,MAC
+39,Mark,Engineer,PA,MAC
+40,Mary,Engineer,PA,PC
+41,Fred,Admin,PA,PC
+

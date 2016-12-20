@@ -1,0 +1,10 @@
+# Chapter 6
+
+# To create the TCP plots used in the book, run the following:
+
+  Rscript create-TCP-plot.R 
+
+# To create the charts used in the book run the following:
+
+  Rscript create_charts.R 
+

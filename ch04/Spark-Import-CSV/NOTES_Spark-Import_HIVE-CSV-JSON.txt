@@ -1,0 +1,149 @@
+# Chapter 4
+# Example commands to enter data CSV/Json data into iSPark using pyspark 
+#
+#  Assumes path is for user "hdfs," change all references from
+#  /home/hdfs to your path in HDFS
+#
+
+>>> from pyspark.sql import SQLContext
+>>> from pyspark.sql.types import *
+>>> from pyspark.sql import Row
+
+# Ceate the SQL context
+>>> sqlContext = SQLContext(sc)
+
+#read in CSV data
+>>> csv_data = sc.textFile("file:///home/hdfs/Spark-Import-CSV/names.csv")
+
+# confirm RDD
+>>> type(csv_data)
+<class 'pyspark.rdd.RDD'>
+
+# peak at the RDD data
+>>> csv_data.take(5)
+[u'EmployeeID,FirstName,Title,State,Laptop', u'10,Andrew,Manager,DE,PC', u'11,Arun,Manager,NJ,PC', u'12,Harish,Sales,NJ,MAC', u'13,Robert,Manager,PA,MAC']
+
+# Split on comma
+>>> csv_data  = csv_data.map(lambda p: p.split(","))
+
+# remove the header
+>>> header=csv_data.first()
+>>> csv_data = csv_data.filter(lambda p:p != header)
+
+# Place RRD into Spark DataFrame
+>>> df_csv = csv_data.map(lambda p: Row(EmployeeID = int(p[0]), FirstName = p[1], Title=p[2], State=p[3], Laptop=p[4])).toDF()
+
+# show the DataFrame format
+>>>  df_csv
+DataFrame[EmployeeID: bigint, FirstName: string, Laptop: string, State: string, Title: string]
+
+# show the first 5 rows of the DataFrame
+>>> df_csv.show(5)
+
++----------+---------+------+-----+--------+
+|EmployeeID|FirstName|Laptop|State|   Title|
++----------+---------+------+-----+--------+
+|        10|   Andrew|    PC|   DE| Manager|
+|        11|     Arun|    PC|   NJ| Manager|
+|        12|   Harish|   MAC|   NJ|   Sales|
+|        13|   Robert|   MAC|   PA| Manager|
+|        14|    Laura|   MAC|   PA|Engineer|
++----------+---------+------+-----+--------+
+only showing top 5 rows
+
+
+#print the DataFrame schema
+>>> df_csv.printSchema()
+root
+ |-- EmployeeID: long (nullable = true)
+ |-- FirstName: string (nullable = true)
+ |-- Laptop: string (nullable = true)
+ |-- State: string (nullable = true)
+ |-- Title: string (nullable = true)
+
+
+# Create and Write a Hive Table in pySpark
+# Similar to usung Hive, just call Hive commands
+#
+>>> from pyspark.sql import HiveContext
+>>> sqlContext = HiveContext(sc)
+
+>>> sqlContext.sql("CREATE TABLE IF NOT EXISTS MoreNames_text(EmployeeID INT, FirstName STRING, Title STRING, State STRING, Preference STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ")
+
+>>> sqlContext.sql("CREATE TABLE IF NOT EXISTS MoreNames(EmployeeID INT, FirstName STRING, Title STRING, State STRING, Preference STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' STORED AS ORC")
+
+>>> sqlContext.sql("LOAD DATA LOCAL INPATH 'MoreNames.txt' INTO TABLE MoreNames_text")
+
+>>> sqlContext.sql("INSERT OVERWRITE TABLE MoreNames SELECT * FROM MoreNames_text")
+
+>>> result = sqlContext.sql("FROM MoreNames SELECT EmployeeID, FirstName, State")
+
+
+# Read a Hive table from Spark
+# Only read EmplyeeID and Laptop
+>>>  sqlContext = HiveContext(sc)
+>>>  df_hive = sqlContext.sql("SELECT EmployeeID, Laptop  FROM names")
+
+>>>  df_hive.show(5) 
+
++----------+------+
+|EmployeeID|Laptop|
++----------+------+
+|        10|    PC|
+|        11|    PC|
+|        12|   MAC|
+|        13|   MAC|
+|        14|   MAC|
++----------+------+
+only showing top 5 rows
+
+>>> df_hive.printSchema()
+root
+ |-- EmployeeID: integer (nullable = true)
+ |-- Laptop: string (nullable = true)
+
+
+# Read from JSON
+# Please note Spark expects each line to be a separate JSON object, so it will fail if you’ll try to load a pretty 
+# formatted JSON file.
+>>> from pyspark.sql import SQLContext
+>>> sqlContext = SQLContext(sc)
+>>> df_json = sqlContext.read.json("file:///home/hdfs/Spark-Import-CSV/names.json")
+>>> df_json.show()
++----------+---------+------+-----+--------+
+|EmployeeID|FirstName|Laptop|State|   Title|
++----------+---------+------+-----+--------+
+|        10|   Andrew|    PC|   DE| Manager|
+|        11|     Arun|    PC|   NJ| Manager|
+|        12|   Harish|   MAC|   NJ|   Sales|
+|        13|   Robert|   MAC|   PA| Manager|
+|        14|    Laura|   MAC|   PA|Engineer|
+|        15|     Anju|    PC|   PA|     CEO|
+|        16|  Aarathi|    PC|   NJ| Manager|
+|        17| Parvathy|   MAC|   DE|Engineer|
+|        18|   Gopika|   MAC|   DE|   Admin|
+|        19|   Steven|   MAC|   PA|Engineer|
+|        20|  Michael|    PC|   PA|     CFO|
+|        21|    Gokul|    PC|   PA|   Admin|
+|        23|    Janet|    PC|   DE|   Sales|
+|        22|     Anne|    PC|   PA|   Admin|
+|        24|     Hari|    PC|   NJ|   Admin|
+|        25|   Sanker|   MAC|   NJ|   Admin|
+|        26| Margaret|    PC|   PA|    Tech|
+|        27|   Nirmal|   MAC|   PA|    Tech|
+|        28|    jinju|   MAC|   PA|Engineer|
+|        29|    Nancy|    PC|   NJ|   Admin|
++----------+---------+------+-----+--------+
+
+>>> df_json
+DataFrame[EmployeeID: bigint, FirstName: string, Laptop: string, State: string, Title: string]
+
+>>> df_json.printSchema()
+
+root
+ |-- EmployeeID: long (nullable = true)
+ |-- FirstName: string (nullable = true)
+ |-- Laptop: string (nullable = true)
+ |-- State: string (nullable = true)
+ |-- Title: string (nullable = true)
+

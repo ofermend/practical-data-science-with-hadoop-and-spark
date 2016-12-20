@@ -1,0 +1,86 @@
+# Chapter 4
+# Example commands for loading CSV data into a HIVE table
+
+# Assumes path is for user "hdfs," change all references from
+# /user/hdfs to your path in HDFS
+
+# create the names directlry in HDFS
+
+ hdfs dfs -mkdir names
+
+# move names to HDFS
+
+ hdfs dfs -put names.csv names
+
+# HIVE commands to create external HIVE table
+
+CREATE EXTERNAL TABLE IF NOT EXISTS Names_text(
+EmployeeID INT, FirstName STRING, Title STRING, State STRING, Laptop STRING)
+COMMENT 'Employee Names'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+location '/user/hdfs/names';
+
+# check to see if names are there:
+
+Select * from Names_text limit 5;
+
+# now create HIVE table
+
+CREATE TABLE IF NOT EXISTS Names(
+EmployeeID INT, FirstName STRING, Title STRING, State STRING, Laptop STRING)
+COMMENT 'Employee Names'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS ORC;
+
+# copy data from external table to interal table
+
+INSERT OVERWRITE TABLE Names SELECT * FROM Names_text;
+
+# check to see if names are there:
+
+Select * from Names limit 5;
+
+# create partioned table
+
+CREATE TABLE IF NOT EXISTS Names_part(
+EmployeeID INT, FirstName STRING, Title STRING, Laptop STRING)
+COMMENT 'Employee names partitioned by state'
+PARTITIONED BY (State STRING) 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS ORC;
+
+# select names from "PA" and place in table.
+
+INSERT INTO TABLE Names_part PARTITION(state='PA')
+SELECT EmployeeID, FirstName, Title, Laptop FROM Names_text WHERE state='PA'; 
+
+# Create table using Parquet format
+
+CREATE TABLE IF NOT EXISTS Names_Parquet(
+EmployeeID INT, FirstName STRING, Title STRING, State STRING, Laptop STRING)
+COMMENT 'Employee Names'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS PARQUET;
+
+# add data
+
+INSERT OVERWRITE TABLE Names_Parquet SELECT * FROM Names_text;
+
+# save external table in Parquet format
+
+CREATE EXTERNAL TABLE IF NOT EXISTS Names_Parquet_Ext(
+EmployeeID INT, FirstName STRING, Title STRING, State STRING, Laptop STRING)
+COMMENT 'Employee Names'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS PARQUET
+LOCATION '/user/hdfs/names-parquet';
+
+# add data
+
+INSERT OVERWRITE TABLE Names_Parquet_Ext SELECT * FROM Names_text;

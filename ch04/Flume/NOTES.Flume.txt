@@ -1,0 +1,89 @@
+# Chapter 4
+
+APACHE FLUME
+============
+
+OS: Linux
+Platform: RHEL 6.6 or 7.2
+Hadoop Version: Hadoop 2.7.1 (Hortonworks HDP 2.4)
+
+NOTE: Output shown below may vary from your screen.
+
+Reference:
+
+  https://flume.apache.org/FlumeUserGuide.html
+
+##########################################################################
+# NOTE: These examples are best done outside of a multi-user environment #
+##########################################################################
+
+Step 1: Simple Test
+===================
+
+# agent only needed on nodes that generate data 
+
+flume-ng agent --conf conf --conf-file simple-example.conf --name simple_agent -Dflume.root.logger=INFO,console
+
+# in another window
+
+telnet localhost 44444
+
+  Trying ::1...
+  telnet: connect to address ::1: Connection refused
+  Trying 127.0.0.1...
+  Connected to localhost.
+  Escape character is '^]'.
+  testing  1 2 3
+  OK
+
+# Flume agent shows
+
+14/08/14 16:20:58 INFO sink.LoggerSink: Event: { headers:{} body: 74 65 73 74 69 6E 67 20 20 31 20 32 20 33 0D    testing  1 2 3. } 
+
+
+Step 2: Web Log Example
+=======================
+# record the weblogs from the local machine (Ambari output)
+# to HDFS using flume. Two file are needed:
+
+  web-server-target-agent.conf - the target flume agent that writes the data to HDFS
+  web-server-source-agent.conf - the source flume agent that captures the web log data
+
+# First, as root make local log directory to echo the web log 
+
+  mkdir /var/log/flume-hdfs
+  chown hdfs:hadoop /var/log/flume-hdfs/
+
+# Next, as user hdfs make a flume data directory in HDFS
+
+  hdfs dfs -mkdir /user/hdfs/flume-channel/
+
+# Start flume target agent as user hdfs (writes data to HDFS)
+# This agent should be started before the source agent.  
+# Note: with HDP flume can be started as a service when the system boots
+# e.g "service start flume" The /etc/flume/conf/{flume.conf,flume-env.sh.template}
+# files need to be configured. For this example
+# /etc/flume/conf/flume.conf would be the same as web-server-target.conf 
+
+  flume-ng agent -c conf -f web-server-target-agent.conf -n collector
+
+# as root, start the source agent to feed the target agent
+
+  flume-ng agent -c conf -f web-server-source-agent.conf -n source_agent
+
+# check to see if working (assuming no errors from flume-ng agents)
+# inspect local log, as user hdfs (file name will vary)
+
+  tail -f /var/log/flume-hdfs/1408126765449-1
+
+# inspect data in HDFS (filename will vary)
+
+  hdfs dfs -tail flume-channel/apache_access_combined/140815/FlumeData.1408126868576
+
+
+More Information 
+================
+# see the flume website for more information (including plugins)
+ 
+  https://flume.apache.org/FlumeUserGuide.html
+  http://www.rittmanmead.com/2014/05/trickle-feeding-webserver-log-files-to-hdfs-using-apache-flume/
