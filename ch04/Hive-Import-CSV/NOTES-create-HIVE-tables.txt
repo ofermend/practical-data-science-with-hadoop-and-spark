@@ -58,6 +58,12 @@ STORED AS ORC;
 INSERT INTO TABLE Names_part PARTITION(state='PA')
 SELECT EmployeeID, FirstName, Title, Laptop FROM Names_text WHERE state='PA'; 
 
+
+
+
+
+
+#####################################
 # Create table using Parquet format
 
 CREATE TABLE IF NOT EXISTS Names_Parquet(
